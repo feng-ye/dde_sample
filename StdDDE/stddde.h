@@ -4,37 +4,38 @@
 #define _STDDDE_
 
 #include <ddeml.h>
+#include <atlcoll.h>
 
 //
 // String names for standard Windows Clipboard formats
 //
 
-#define SZCF_TEXT           "TEXT"        
-#define SZCF_BITMAP         "BITMAP"      
-#define SZCF_METAFILEPICT   "METAFILEPICT"
-#define SZCF_SYLK           "SYLK"        
-#define SZCF_DIF            "DIF"         
-#define SZCF_TIFF           "TIFF"        
-#define SZCF_OEMTEXT        "OEMTEXT"     
-#define SZCF_DIB            "DIB"         
-#define SZCF_PALETTE        "PALETTE"     
-#define SZCF_PENDATA        "PENDATA"     
-#define SZCF_RIFF           "RIFF"     
-#define SZCF_WAVE           "WAVE"     
-#define SZCF_UNICODETEXT    "UNICODETEXT" 
-#define SZCF_ENHMETAFILE    "ENHMETAFILE" 
+#define SZCF_TEXT           _T("TEXT")
+#define SZCF_BITMAP         _T("BITMAP")
+#define SZCF_METAFILEPICT   _T("METAFILEPICT")
+#define SZCF_SYLK           _T("SYLK")
+#define SZCF_DIF            _T("DIF")
+#define SZCF_TIFF           _T("TIFF")
+#define SZCF_OEMTEXT        _T("OEMTEXT")
+#define SZCF_DIB            _T("DIB")
+#define SZCF_PALETTE        _T("PALETTE")
+#define SZCF_PENDATA        _T("PENDATA")
+#define SZCF_RIFF           _T("RIFF")
+#define SZCF_WAVE           _T("WAVE")
+#define SZCF_UNICODETEXT    _T("UNICODETEXT")
+#define SZCF_ENHMETAFILE    _T("ENHMETAFILE")
 
 //
 // String names for some standard DDE strings not
 // defined in DDEML.H
 //
 
-#define SZ_READY            "Ready"
-#define SZ_BUSY             "Busy"
-#define SZ_TAB              "\t"
-#define SZ_RESULT           "Result"
-#define SZ_PROTOCOLS        "Protocols"
-#define SZ_EXECUTECONTROL1  "Execute Control 1"
+#define SZ_READY            _T("Ready")
+#define SZ_BUSY             _T("Busy")
+#define SZ_TAB              _T("\t")
+#define SZ_RESULT           _T("Result")
+#define SZ_PROTOCOLS        _T("Protocols")
+#define SZ_EXECUTECONTROL1  _T("Execute Control 1")
 
 //
 // Helpers
@@ -46,9 +47,8 @@ static CString GetFormatName(WORD wFmt);
 // Generic counted object class
 //
 
-class CDDECountedObject : public CObject
+class CDDECountedObject
 {
-    DECLARE_DYNCREATE(CDDECountedObject);
 public:
     CDDECountedObject();
     virtual ~CDDECountedObject();
@@ -58,21 +58,20 @@ public:
 private:
     int m_iRefCount;
 };
-    
+
 //
 // String handle class
 //
 
 class CDDEServer;
 
-class CHSZ : public CObject
+class CHSZ
 {
-    DECLARE_DYNCREATE(CHSZ);
 public:
     CHSZ();
-    CHSZ(CDDEServer* pServer, const char* szName);
+    CHSZ(CDDEServer* pServer, LPCTSTR szName);
     virtual ~CHSZ();
-    void Create(CDDEServer* pServer, const char* szName);
+    void Create(CDDEServer* pServer, LPCTSTR szName);
     operator HSZ() {return m_hsz;}
 
     HSZ m_hsz;
@@ -87,13 +86,12 @@ protected:
 
 class CDDETopic;
 
-class CDDEItem : public CObject
+class CDDEItem
 {
-    DECLARE_DYNCREATE(CDDEItem);
 public:
     CDDEItem();
     virtual ~CDDEItem();
-    void Create(const char* pszName);
+    void Create(LPCTSTR pszName);
     void PostAdvise();
     virtual BOOL Request(UINT wFmt, void** ppData, DWORD* pdwSize);
     virtual BOOL Poke(UINT wFmt, void* pData, DWORD dwSize);
@@ -114,14 +112,13 @@ protected:
 
 class CDDEStringItem : public CDDEItem
 {
-    DECLARE_DYNCREATE(CDDEStringItem);
 public:
-    virtual void OnPoke(){;}
-    virtual void SetData(const char* pszData);
-    virtual const char* GetData()
-        {return (const char*)m_strData;}
-    operator const char*()
-        {return (const char*)m_strData;}
+    virtual void OnPoke(){}
+    virtual void SetData(LPCTSTR pszData);
+    virtual LPCTSTR GetData()
+        {return m_strData;}
+    operator LPCTSTR()
+        {return m_strData;}
 
 protected:
     virtual BOOL Request(UINT wFmt, void** ppData, DWORD* pdwSize);
@@ -135,16 +132,7 @@ protected:
 // Item list class
 //
 
-class CDDEItemList : public CObList
-{
-    DECLARE_DYNCREATE(CDDEItemList);
-public:
-    CDDEItemList();
-    virtual ~CDDEItemList();
-    CDDEItem* GetNext(POSITION& rPosition) const
-        {return (CDDEItem*)CObList::GetNext(rPosition);}
-
-};
+typedef CAtlList<CDDEItem*> CDDEItemList;
 
 //
 // Topic class
@@ -152,21 +140,20 @@ public:
 
 class CDDEServer;
 
-class CDDETopic : public CObject
+class CDDETopic
 {
-    DECLARE_DYNCREATE(CDDETopic);
 public:
     CDDETopic();
     virtual ~CDDETopic();
-    void Create(const char* pszName);
+    void Create(LPCTSTR pszName);
     BOOL AddItem(CDDEItem* pItem);
-    virtual BOOL Request(UINT wFmt, const char* pszItem,
+    virtual BOOL Request(UINT wFmt, LPCTSTR pszItem,
                          void** ppData, DWORD* pdwSize);
-    virtual BOOL Poke(UINT wFmt, const char* pszItem,
+    virtual BOOL Poke(UINT wFmt, LPCTSTR pszItem,
                       void* pData, DWORD dwSize);
     virtual BOOL Exec(void* pData, DWORD dwSize);
-    virtual CDDEItem* FindItem(const char* pszItem);
-    virtual BOOL CanAdvise(UINT wFmt, const char* pszItem);
+    virtual CDDEItem* FindItem(LPCTSTR pszItem);
+    virtual BOOL CanAdvise(UINT wFmt, LPCTSTR pszItem);
     void PostAdvise(CDDEItem* pItem);
 
     CString m_strName;          // name of this topic
@@ -180,18 +167,7 @@ protected:
 // Topic list class
 //
 
-class CDDETopicList : public CObList
-{
-    DECLARE_DYNCREATE(CDDETopicList);
-public:
-    CDDETopicList();
-    virtual ~CDDETopicList();
-    CDDETopic* GetNext(POSITION& rPosition) const
-        {return (CDDETopic*)CObList::GetNext(rPosition);}
-
-protected:
-
-};
+typedef CAtlList<CDDETopic*> CDDETopicList;
 
 //
 // Conversation class
@@ -199,44 +175,31 @@ protected:
 
 class CDDEConv : public CDDECountedObject
 {
-    DECLARE_DYNCREATE(CDDEConv);
 public:
     CDDEConv();
     CDDEConv(CDDEServer* pServer);
     CDDEConv(CDDEServer* pServer, HCONV hConv, HSZ hszTopic);
     virtual ~CDDEConv();
-    virtual BOOL ConnectTo(const char* pszService, const char* pszTopic);
+    virtual BOOL ConnectTo(LPCTSTR pszService, LPCTSTR pszTopic);
     virtual BOOL Terminate();
-    virtual BOOL AdviseData(UINT wFmt, const char* pszTopic, const char* pszItem,
+    virtual BOOL AdviseData(UINT wFmt, LPCTSTR pszTopic, LPCTSTR pszItem,
                             void* pData, DWORD dwSize);
-    virtual BOOL Request(const char* pszItem, void** ppData, DWORD* pdwSize);
-    virtual BOOL Advise(const char* pszItem);
-    virtual BOOL Exec(const char* pszCmd);
-    virtual BOOL Poke(UINT wFmt, const char* pszItem, void* pData, DWORD dwSize);
+    virtual BOOL Request(LPCTSTR pszItem, void** ppData, DWORD* pdwSize);
+    virtual BOOL Advise(LPCTSTR pszItem);
+    virtual BOOL Exec(LPCTSTR pszCmd);
+    virtual BOOL Poke(UINT wFmt, LPCTSTR pszItem, void* pData, DWORD dwSize);
 
     CDDEServer* m_pServer;
     HCONV   m_hConv;            // Conversation handle
     HSZ     m_hszTopic;         // Topic name
-
 };
 
 //
 // Conversation list class
 //
 
-class CDDEConvList : public CObList
-{
-    DECLARE_DYNCREATE(CDDEConvList);
-public:
-    CDDEConvList();
-    virtual ~CDDEConvList();
-    CDDEConv* GetNext(POSITION& rPosition) const
-        {return (CDDEConv*)CObList::GetNext(rPosition);}
+typedef CAtlList<CDDEConv*> CDDEConvList;
 
-    
-protected:
-
-};
 
 //
 // Topics and items used to support the 'system' topic in the server
@@ -244,37 +207,32 @@ protected:
 
 class CDDESystemItem : public CDDEItem
 {
-    DECLARE_DYNCREATE(CDDESystemItem);
 protected:
     virtual WORD* GetFormatList();
 };
 
 class CDDESystemItem_TopicList : public CDDESystemItem
 {
-    DECLARE_DYNCREATE(CDDESystemItem_TopicList);
 protected:
     virtual BOOL Request(UINT wFmt, void** ppData, DWORD* pdwSize);
 };
 
 class CDDESystemItem_ItemList : public CDDESystemItem
 {
-    DECLARE_DYNCREATE(CDDESystemItem_ItemList);
 protected:
     virtual BOOL Request(UINT wFmt, void** ppData, DWORD* pdwSize);
 };
 
 class CDDESystemItem_FormatList : public CDDESystemItem
 {
-    DECLARE_DYNCREATE(CDDESystemItem_FormatList);
 protected:
     virtual BOOL Request(UINT wFmt, void** ppData, DWORD* pdwSize);
 };
 
 class CDDEServerSystemTopic : public CDDETopic
 {
-    DECLARE_DYNCREATE(CDDEServerSystemTopic);
 protected:
-    virtual BOOL Request(UINT wFmt, const char* pszItem,
+    virtual BOOL Request(UINT wFmt, LPCTSTR pszItem,
                          void** ppData, DWORD* pdwSize);
 
 };
@@ -285,13 +243,12 @@ protected:
 // Note: this class is for a server which supports only one service
 //
 
-class CDDEServer : public CObject
+class CDDEServer
 {
-    DECLARE_DYNCREATE(CDDEServer);
 public:
-    CDDEServer();
+    explicit CDDEServer(LPCTSTR pszServiceName);
     virtual ~CDDEServer();
-    BOOL Create(const char* pszServiceName,
+    BOOL Create(LPCTSTR pszServiceName,
                 DWORD dwFilterFlags = 0,
                 DWORD* pdwDDEInst = NULL);
     void Shutdown();
@@ -308,17 +265,17 @@ public:
                                     DWORD dwData2)
         {return NULL;}
 
-    virtual BOOL Request(UINT wFmt, const char* pszTopic, const char* pszItem,
+    virtual BOOL Request(UINT wFmt, LPCTSTR pszTopic, LPCTSTR pszItem,
                          void** ppData, DWORD* pdwSize);
-    virtual BOOL Poke(UINT wFmt, const char* pszTopic, const char* pszItem,
+    virtual BOOL Poke(UINT wFmt, LPCTSTR pszTopic, LPCTSTR pszItem,
                       void* pData, DWORD dwSize);
-    virtual BOOL AdviseData(UINT wFmt, HCONV hConv, const char* pszTopic, const char* pszItem,
+    virtual BOOL AdviseData(UINT wFmt, HCONV hConv, LPCTSTR pszTopic, LPCTSTR pszItem,
                       void* pData, DWORD dwSize);
-    virtual BOOL Exec(const char* pszTopic, void* pData, DWORD dwSize);
-    virtual void Status(const char* pszFormat, ...) {;}
+    virtual BOOL Exec(LPCTSTR pszTopic, void* pData, DWORD dwSize);
+    virtual void Status(LPCTSTR pszFormat, ...) {}
     virtual BOOL AddTopic(CDDETopic* pTopic);
     CString StringFromHsz(HSZ hsz);
-    virtual BOOL CanAdvise(UINT wFmt, const char* pszTopic, const char* pszItem);
+    virtual BOOL CanAdvise(UINT wFmt, LPCTSTR pszTopic, LPCTSTR pszItem);
     void PostAdvise(CDDETopic* pTopic, CDDEItem* pItem);
     CDDEConv*  AddConversation(HCONV hConv, HSZ hszTopic);
     CDDEConv* AddConversation(CDDEConv* pNewConv);
@@ -342,7 +299,7 @@ protected:
                 HSZ hsz2,
                 HDDEDATA hData,
                 HDDEDATA *phReturnData);
-    CDDETopic* FindTopic(const char* pszTopic);
+    CDDETopic* FindTopic(LPCTSTR pszTopic);
 
 private:
     static HDDEDATA CALLBACK StdDDECallback(WORD wType,
@@ -359,7 +316,7 @@ private:
     CDDESystemItem_ItemList m_SystemItemSysItems;
     CDDESystemItem_ItemList m_SystemItemItems;
     CDDESystemItem_FormatList m_SystemItemFormats;
-};          
+};
 
 
 #endif // _STDDDE_
