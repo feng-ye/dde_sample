@@ -6,8 +6,6 @@
 #include "myconv.h"
 #include "ddecldlg.h"
 
-IMPLEMENT_DYNCREATE(CMyConv, CDDEConv);
-
 CMyConv::CMyConv()
 {
     m_pDlg = NULL;
@@ -19,16 +17,16 @@ CMyConv::CMyConv(CDDEServer* pServer, CDDECliDlg* pDlg)
     m_pDlg = pDlg;
 }
 
-BOOL CMyConv::AdviseData(UINT wFmt, const char* pszTopic,
-                         const char* pszItem,
+BOOL CMyConv::AdviseData(UINT wFmt, LPCTSTR pszTopic,
+                         LPCTSTR pszItem,
                          void* pData, DWORD dwSize)
 {
-    STATUS("AdviseData: %s|%s: %s",
-           (const char*) pszTopic,
-           (const char*) pszItem,
-           (const char*) pData);
+    STATUS(_T("AdviseData: %s|%s: %s"),
+           (LPCTSTR) pszTopic,
+           (LPCTSTR) pszItem,
+           (LPCTSTR) pData);
     ASSERT(m_pDlg);
-    m_pDlg->NewData(pszItem, (const char*)pData);
+    m_pDlg->NewData(pszItem, (LPCTSTR)pData);
 
     return TRUE;
 }

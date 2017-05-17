@@ -60,9 +60,9 @@ BOOL CAboutDlg::OnInitDialog()
 {
 	CDialog::OnInitDialog();
 	CenterWindow();
-	
+
 	// TODO: Add extra about dlg initialization here
-	
+
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
@@ -139,15 +139,15 @@ BOOL CDDECliDlg::OnInitDialog()
 		pSysMenu->AppendMenu(MF_SEPARATOR);
 		pSysMenu->AppendMenu(MF_STRING, IDM_ABOUTBOX, strAboutMenu);
 	}
-	
-	Status("Initializing service");
+
+	Status(_T("Initializing service"));
 
     if (!m_DDEClient.Create(AfxGetAppName())) {
-        AfxMessageBox("Failed to initialize DDE client");
+        AfxMessageBox(_T("Failed to initialize DDE client"));
         return FALSE;
     }
-	
-	Status("Service running");
+
+	Status(_T("Service running"));
     UpdateUI();
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -169,7 +169,7 @@ void CDDECliDlg::OnSysCommand(UINT nID, LPARAM lParam)
 //  to draw the icon.  For MFC applications using the document/view model,
 //  this is automatically done for you by the framework.
 
-void CDDECliDlg::OnPaint() 
+void CDDECliDlg::OnPaint()
 {
 	if (IsIconic())
 	{
@@ -201,12 +201,12 @@ HCURSOR CDDECliDlg::OnQueryDragIcon()
 	return (HCURSOR) m_hIcon;
 }
 
-void CDDECliDlg::Status(const char* pszFormat, ...)
+void CDDECliDlg::Status(LPCTSTR pszFormat, ...)
 {
-    char buf[1024];
+    TCHAR buf[1024];
 	va_list arglist;
 	va_start(arglist, pszFormat);
-    vsprintf(buf, pszFormat, arglist);
+    _vsntprintf_s(buf, ARRAYSIZE(buf), pszFormat, arglist);
 	va_end(arglist);
 
     // Get the number of lines in the listbox
@@ -216,7 +216,7 @@ void CDDECliDlg::Status(const char* pszFormat, ...)
     // make sure it's not getting too big
     m_wndStatus.SetRedraw(FALSE);
     while (iLines > 100) {
-        
+
         m_wndStatus.DeleteString(0);
         iLines--;
     }
@@ -232,7 +232,7 @@ void CDDECliDlg::Status(const char* pszFormat, ...)
     m_wndStatus.SetRedraw(TRUE);
 }
 
-void CDDECliDlg::OnConnectBtn() 
+void CDDECliDlg::OnConnectBtn()
 {
     ASSERT(!m_pConversation);
 
@@ -242,11 +242,11 @@ void CDDECliDlg::OnConnectBtn()
 
     UpdateData(TRUE);
     if (m_strService.GetLength() == 0) {
-        AfxMessageBox("You must enter a service name");
+        AfxMessageBox(_T("You must enter a service name"));
         return;
     }
     if (m_strTopic.GetLength() == 0) {
-        AfxMessageBox("You must enter a topic name");
+        AfxMessageBox(_T("You must enter a topic name"));
         return;
     }
 
@@ -264,16 +264,16 @@ void CDDECliDlg::OnConnectBtn()
         return;
     }
 
-    Status("Connected to %s|%s",
-           (const char*)m_strService,
-           (const char*)m_strTopic);
+    Status(_T("Connected to %s|%s"),
+           (LPCTSTR)m_strService,
+           (LPCTSTR)m_strTopic);
 
     //
-    // if an item is listed, get the current value and 
+    // if an item is listed, get the current value and
     // set up an advise request for changes
     //
-    
-    if (m_strItem.GetLength() > 0) { 
+
+    if (m_strItem.GetLength() > 0) {
 
         DWORD dwSize = 0;
         void* pData = NULL;
@@ -282,7 +282,7 @@ void CDDECliDlg::OnConnectBtn()
             m_strItemData = (char*)pData;
             UpdateData(FALSE);
             delete pData;
-        
+
             //
             // ask for notice if it changes
             //
@@ -291,20 +291,20 @@ void CDDECliDlg::OnConnectBtn()
 
         } else {
 
-            Status("Failed to get data from %s",
-                   (const char*) m_strItem);
+            Status(_T("Failed to get data from %s"),
+                   (LPCTSTR) m_strItem);
         }
     }
     UpdateUI();
 }
 
-void CDDECliDlg::OnDisconnectBtn() 
+void CDDECliDlg::OnDisconnectBtn()
 {
     if (m_pConversation) {
         m_pConversation->Terminate();
         m_pConversation->Release();
         m_pConversation = NULL;
-	    Status("Disconnected");
+	    Status(_T("Disconnected"));
         UpdateUI();
     }
 }
@@ -362,25 +362,25 @@ void CDDECliDlg::UpdateUI()
     }
 }
 
-void CDDECliDlg::OnChangeService() 
+void CDDECliDlg::OnChangeService()
 {
-	UpdateUI();	
+	UpdateUI();
 }
 
-void CDDECliDlg::OnChangeTopic() 
+void CDDECliDlg::OnChangeTopic()
 {
-	UpdateUI();	
+	UpdateUI();
 }
 
-void CDDECliDlg::OnChangeItem() 
+void CDDECliDlg::OnChangeItem()
 {
-	UpdateUI();	
+	UpdateUI();
 }
 
-void CDDECliDlg::OnDestroy() 
+void CDDECliDlg::OnDestroy()
 {
 	CDialog::OnDestroy();
-	
+
     //
     // Shutdown any conversation
     //
@@ -395,39 +395,39 @@ void CDDECliDlg::OnDestroy()
     //
 
     m_DDEClient.Shutdown();
-    	
+
 }
 
-void CDDECliDlg::NewData(const char* pszItem, const char* pData)
+void CDDECliDlg::NewData(LPCTSTR pszItem, LPCTSTR pData)
 {
     //
     // See if it's for the current item
     //
 
-    if (stricmp(pszItem, (const char*)m_strItem) == 0) {
+    if (lstrcmpi(pszItem, (LPCTSTR)m_strItem) == 0) {
         m_strItemData = pData;
         UpdateData(FALSE);
     }
 
 }
 
-void CDDECliDlg::OnExecBtn() 
+void CDDECliDlg::OnExecBtn()
 {
 	ASSERT(m_pConversation);
     UpdateData(TRUE);
     if (!m_pConversation->Exec(m_strExecCmd)) {
-        Status("Exec failed");
+        Status(_T("Exec failed"));
     }
 }
 
-void CDDECliDlg::OnPokeBtn() 
+void CDDECliDlg::OnPokeBtn()
 {
 	ASSERT(m_pConversation);
     UpdateData(TRUE);
     if (!m_pConversation->Poke(CF_TEXT,
                           m_strItem,
-                          (void*)(const char*)m_strItemData,
+                          (void*)(LPCTSTR)m_strItemData,
                           m_strItemData.GetLength() + 1)) {
-        Status("Poke failed");
+        Status(_T("Poke failed"));
     }
 }

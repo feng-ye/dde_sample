@@ -4,14 +4,17 @@
 #include "ddecli.h"
 #include "myclient.h"
 
-IMPLEMENT_DYNCREATE(CMyClient, CDDEServer);
-
-void CMyClient::Status(const char* pszFormat, ...)
+CMyClient::CMyClient()
+    : CDDEServer(AfxGetAppName())
 {
-    char buf[1024];
+}
+
+void CMyClient::Status(LPCTSTR pszFormat, ...)
+{
+    TCHAR buf[1024];
 	va_list arglist;
 	va_start(arglist, pszFormat);
-    vsprintf(buf, pszFormat, arglist);
+    _vsntprintf_s(buf, ARRAYSIZE(buf), pszFormat, arglist);
 	va_end(arglist);
 
     STATUS(buf);

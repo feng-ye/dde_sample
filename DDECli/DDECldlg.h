@@ -9,8 +9,8 @@ class CDDECliDlg : public CDialog
 // Construction
 public:
 	CDDECliDlg(CWnd* pParent = NULL);	// standard constructor
-    void Status(const char* pszFormat, ...);
-    void NewData(const char* pszItem, const char* pData);
+    void Status(LPCTSTR pszFormat, ...);
+    void NewData(LPCTSTR pszItem, LPCTSTR pData);
 
 // Dialog Data
 	//{{AFX_DATA(CDDECliDlg)

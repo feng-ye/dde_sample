@@ -14,7 +14,7 @@ public:
 
 // Operations
 public:
-    void PrintLine(const char* pszFormat, ...);
+    void PrintLine(LPCTSTR pszFormat, ...);
 
 // Overrides
 	// ClassWizard generated virtual function overrides

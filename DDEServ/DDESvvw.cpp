@@ -78,20 +78,20 @@ int CDDEServView::OnCreate(LPCREATESTRUCT lpCreateStruct)
     GetEditCtrl().SetReadOnly();
     GetEditCtrl().SetFont(&m_font, FALSE);
     m_iCurrentLine = 0;
-    PrintLine("Totally bogus DDE server");
-    PrintLine("========================");
+    PrintLine(_T("Totally bogus DDE server"));
+    PrintLine(_T("========================"));
 	
 	return 0;
 }
 
-void CDDEServView::PrintLine(const char* pszFormat, ...)
+void CDDEServView::PrintLine(LPCTSTR pszFormat, ...)
 {
-    char buf[1024];
+    TCHAR buf[1024];
 	va_list arglist;
 	va_start(arglist, pszFormat);
-    vsprintf(buf, pszFormat, arglist);
+    _vsntprintf_s(buf, ARRAYSIZE(buf), pszFormat, arglist);
 	va_end(arglist);
-    strcat(buf, "\r\n");
+    _tcscat_s(buf, ARRAYSIZE(buf), _T("\r\n"));
 
     // add the new line to the edit ctrl
     CEdit& ec = GetEditCtrl();

@@ -13,7 +13,7 @@ protected: // create from serialization only
 // Attributes
 public:
     CMyServer m_Server;
-    void PrintLine(const char* pszFormat, ...);
+    void PrintLine(LPCTSTR pszFormat, ...);
 
 // Operations
 public:

@@ -21,7 +21,7 @@ class CMyServer : public CDDEServer
 public:
     CMyServer();
     virtual ~CMyServer();
-    virtual void Status(const char* pszFormat, ...);
+    virtual void Status(LPCTSTR pszFormat, ...);
     virtual BOOL OnCreate();
 
 public:

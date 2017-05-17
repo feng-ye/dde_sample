@@ -5,7 +5,7 @@
         "name": "x86-Debug",
         "generator": "Visual Studio 15 2017",
         "configurationType" : "Debug",
-        "buildRoot":  "${workspaceRoot}\\build-x86",
+        "buildRoot":  "${workspaceRoot}\\build-${name}",
         "cmakeCommandArgs":  "",
         "buildCommandArgs": "-m -v:minimal",
         "ctestCommandArgs":  ""
@@ -14,28 +14,28 @@
         "name": "x86-Release",
         "generator": "Visual Studio 15 2017",
         "configurationType": "Release",
-        "buildRoot": "${workspaceRoot}\\build-x86",
+        "buildRoot": "${workspaceRoot}\\build-${name}",
         "cmakeCommandArgs": "",
         "buildCommandArgs": "-m -v:minimal",
         "ctestCommandArgs": ""
       },
-        {
+      {
         "name": "x64-Debug",
         "generator": "Visual Studio 15 2017 Win64",
-        "configurationType" : "Debug",
-        "buildRoot":  "${workspaceRoot}\\build",
-        "cmakeCommandArgs":  "",
+        "configurationType": "Debug",
+        "buildRoot": "${workspaceRoot}\\build-${name}",
+        "cmakeCommandArgs": "",
         "buildCommandArgs": "-m -v:minimal",
-        "ctestCommandArgs":  ""
-        },
-        {
+        "ctestCommandArgs": ""
+      },
+      {
         "name": "x64-Release",
         "generator": "Visual Studio 15 2017 Win64",
-        "configurationType" : "Release",
-        "buildRoot":  "${workspaceRoot}\\build",
-        "cmakeCommandArgs":  "",
+        "configurationType": "Release",
+        "buildRoot": "${workspaceRoot}\\build-${name}",
+        "cmakeCommandArgs": "",
         "buildCommandArgs": "-m -v:minimal",
-        "ctestCommandArgs":  ""
-        }
+        "ctestCommandArgs": ""
+      }
     ]
 }

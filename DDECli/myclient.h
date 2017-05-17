@@ -2,7 +2,7 @@
 
 class CMyClient : public CDDEServer
 {
-    DECLARE_DYNCREATE(CMyClient);
 public:
-    virtual void Status(const char* pszFormat, ...);
+    CMyClient();
+    virtual void Status(LPCTSTR pszFormat, ...);
 };

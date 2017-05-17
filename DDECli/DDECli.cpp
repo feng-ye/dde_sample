@@ -47,12 +47,11 @@ BOOL CDDEClientApp::InitInstance()
 	//  of your final executable, you should remove from the following
 	//  the specific initialization routines you do not need.
 
-	Enable3dControls();
 	LoadStdProfileSettings();  // Load standard INI file options (including MRU)
 
 	CDDECliDlg dlg;
 	m_pMainWnd = &dlg;
-	int nResponse = dlg.DoModal();
+	INT_PTR nResponse = dlg.DoModal();
 	if (nResponse == IDOK)
 	{
 		// TODO: Place code here to handle when the dialog is
@@ -69,12 +68,12 @@ BOOL CDDEClientApp::InitInstance()
 	return FALSE;
 }
 
-void CDDEClientApp::Status(const char* pszFormat, ...)
+void CDDEClientApp::Status(LPCTSTR pszFormat, ...)
 {
-    char buf[1024];
+    TCHAR buf[1024];
 	va_list arglist;
 	va_start(arglist, pszFormat);
-    vsprintf(buf, pszFormat, arglist);
+    _vsntprintf_s(buf, ARRAYSIZE(buf), pszFormat, arglist);
 	va_end(arglist);
 
     CDDECliDlg* pFrame = (CDDECliDlg*) m_pMainWnd;

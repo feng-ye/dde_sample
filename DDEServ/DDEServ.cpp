@@ -51,8 +51,6 @@ BOOL CDDEServ::InitInstance()
 	//  of your final executable, you should remove from the following
 	//  the specific initialization routines you do not need.
 
-	Enable3dControls();
-
 	LoadStdProfileSettings(0);  // Load standard INI file options (including MRU)
 
 	// Register the application's document templates.  Document templates
@@ -128,12 +126,12 @@ void CDDEServ::OnAppAbout()
 /////////////////////////////////////////////////////////////////////////////
 // CDDEServ commands
 
-void CDDEServ::Status(const char* pszFormat, ...)
+void CDDEServ::Status(LPCTSTR pszFormat, ...)
 {
-    char buf[1024];
+    TCHAR buf[1024];
 	va_list arglist;
 	va_start(arglist, pszFormat);
-    vsprintf(buf, pszFormat, arglist);
+    _vsntprintf_s(buf, ARRAYSIZE(buf), pszFormat, arglist);
 	va_end(arglist);
 
     CMainFrame* pFrame = (CMainFrame*) m_pMainWnd;

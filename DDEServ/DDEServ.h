@@ -17,7 +17,7 @@ class CDDEServ : public CWinApp
 {
 public:
 	CDDEServ();
-    void Status(const char* pszFormat, ...);
+    void Status(LPCTSTR pszFormat, ...);
 
 // Overrides
 	// ClassWizard generated virtual function overrides

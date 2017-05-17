@@ -103,10 +103,9 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
     //
 
     if (!m_Server.Create(AfxGetAppName())) {
-        char buf[128];
-        sprintf(buf,
-                "Service failed to start. Error: %d",
-                m_Server.GetLastError());
+        CString buf;
+        buf.Format(_T("Service failed to start. Error: %d"),
+                   m_Server.GetLastError());
         AfxMessageBox(buf);
     }
 
@@ -132,12 +131,12 @@ void CMainFrame::Dump(CDumpContext& dc) const
 /////////////////////////////////////////////////////////////////////////////
 // CMainFrame message handlers
 
-void CMainFrame::PrintLine(const char* pszFormat, ...)
+void CMainFrame::PrintLine(LPCTSTR pszFormat, ...)
 {
-    char buf[1024];
+    TCHAR buf[1024];
 	va_list arglist;
 	va_start(arglist, pszFormat);
-    vsprintf(buf, pszFormat, arglist);
+    _vsntprintf_s(buf, ARRAYSIZE(buf), pszFormat, arglist);
 	va_end(arglist);
 
     CDocument* pDoc = GetActiveDocument();
