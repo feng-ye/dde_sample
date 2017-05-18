@@ -26,7 +26,3 @@ set(CMAKE_MFC_FLAG 2)
 add_executable(DDECli WIN32 ${SRC})
 target_include_directories(DDECli PRIVATE .)
 target_compile_definitions(DDECli PRIVATE _AFXDLL)
-
-add_executable(DDECliU WIN32 ${SRC})
-target_include_directories(DDECliU PRIVATE .)
-target_compile_definitions(DDECliU PRIVATE _AFXDLL _UNICODE)
