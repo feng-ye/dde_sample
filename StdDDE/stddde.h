@@ -246,7 +246,7 @@ protected:
 class CDDEServer
 {
 public:
-    explicit CDDEServer(LPCTSTR pszServiceName);
+    CDDEServer();
     virtual ~CDDEServer();
     BOOL Create(LPCTSTR pszServiceName,
                 DWORD dwFilterFlags = 0,

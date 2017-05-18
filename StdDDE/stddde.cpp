@@ -726,10 +726,9 @@ BOOL CDDEServerSystemTopic::Request(UINT wFmt, LPCTSTR pszItem,
 //
 // CDDEServer
 
-CDDEServer::CDDEServer(LPCTSTR pszServiceName)
+CDDEServer::CDDEServer()
 {
     m_bInitialized = FALSE;
-    m_strServiceName = pszServiceName;
     m_dwDDEInstance = 0;
 }
 
@@ -1528,7 +1527,7 @@ void CDDEServer::PostAdvise(CDDETopic* pTopic, CDDEItem* pItem)
 
 CString GetFormatName(WORD wFmt)
 {
-    CString strName = "";
+    CString strName;
     PCFTAGNAME pCTN;
 
     //

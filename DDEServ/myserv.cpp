@@ -5,7 +5,6 @@
 #include "myserv.h"
 
 CMyServer::CMyServer()
-    : CDDEServer(AfxGetAppName())
 {
 }
 

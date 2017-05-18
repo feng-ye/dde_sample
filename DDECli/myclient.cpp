@@ -5,7 +5,6 @@
 #include "myclient.h"
 
 CMyClient::CMyClient()
-    : CDDEServer(AfxGetAppName())
 {
 }
 
