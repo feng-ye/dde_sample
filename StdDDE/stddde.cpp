@@ -20,7 +20,11 @@
 //
 
 static WORD SysFormatList[] = {
+#ifdef _UNICODE
+    CF_UNICODETEXT,
+#else
     CF_TEXT,
+#endif
     NULL};
 
 //
@@ -49,6 +53,7 @@ CFTAGNAME CFNames[] = {
     CF_PENDATA,     SZCF_PENDATA,
     CF_RIFF,        SZCF_RIFF,
     CF_WAVE,        SZCF_WAVE,
+    CF_UNICODETEXT, SZCF_UNICODETEXT,
     NULL,           NULL
     };
 
@@ -192,10 +197,10 @@ WORD* CDDEStringItem::GetFormatList()
 
 BOOL CDDEStringItem::Request(UINT wFmt, void** ppData, DWORD* pdwSize)
 {
-    ATLASSERT(wFmt == CF_TEXT);
+    ATLASSERT(wFmt == CF_TEXT || wFmt == CF_UNICODETEXT);
     ATLASSERT(ppData);
     *ppData = (void*)(LPCTSTR)m_strData;
-    *pdwSize = m_strData.GetLength() + 1; // allow for the null
+    *pdwSize = (m_strData.GetLength() + 1) * sizeof(TCHAR); // allow for the null
     return TRUE;
 }
 
@@ -258,7 +263,7 @@ BOOL CDDETopic::AddItem(CDDEItem* pNewItem)
 }
 
 BOOL CDDETopic::Request(UINT wFmt, LPCTSTR pszItem,
-                            void** ppData, DWORD* pdwSize)
+                        void** ppData, DWORD* pdwSize)
 {
     //
     // See if we have this item
@@ -558,7 +563,7 @@ BOOL CDDESystemItem_TopicList::Request(UINT wFmt, void** ppData, DWORD* pdwSize)
     //
 
     static CString strTopics;
-    strTopics = "";
+    strTopics.Empty();
     ATLASSERT(m_pTopic);
     CDDEServer* pServer = m_pTopic->m_pServer;
     ATLASSERT(pServer);
@@ -588,7 +593,7 @@ BOOL CDDESystemItem_TopicList::Request(UINT wFmt, void** ppData, DWORD* pdwSize)
     //
 
     *ppData = (void*)(LPCTSTR)strTopics;
-    *pdwSize = strTopics.GetLength() + 1; // include room for the NULL
+    *pdwSize = (strTopics.GetLength() + 1) * sizeof(TCHAR); // include room for the NULL
     return TRUE;
 }
 
@@ -599,7 +604,7 @@ BOOL CDDESystemItem_ItemList::Request(UINT wFmt, void** ppData, DWORD* pdwSize)
     //
 
     static CString strItems;
-    strItems = "";
+    strItems.Empty();
     ATLASSERT(m_pTopic);
     POSITION pos = m_pTopic->m_ItemList.GetHeadPosition();
     int items = 0;
@@ -627,7 +632,7 @@ BOOL CDDESystemItem_ItemList::Request(UINT wFmt, void** ppData, DWORD* pdwSize)
     //
 
     *ppData = (void*)(LPCTSTR)strItems;
-    *pdwSize = strItems.GetLength() + 1; // include romm for the NULL
+    *pdwSize = (strItems.GetLength() + 1) * sizeof(TCHAR); // include romm for the NULL
     return TRUE;
 }
 
@@ -638,7 +643,7 @@ BOOL CDDESystemItem_FormatList::Request(UINT wFmt, void** ppData, DWORD* pdwSize
     //
 
     static CString strFormats;
-    strFormats = "";
+    strFormats.Empty();
     ATLASSERT(m_pTopic);
     POSITION pos = m_pTopic->m_ItemList.GetHeadPosition();
     int iFormats = 0;
@@ -706,7 +711,7 @@ BOOL CDDESystemItem_FormatList::Request(UINT wFmt, void** ppData, DWORD* pdwSize
     //
 
     *ppData = (void*)(LPCTSTR)strFormats;
-    *pdwSize = strFormats.GetLength() + 1; // include romm for the NULL
+    *pdwSize = (strFormats.GetLength() + 1) * sizeof(TCHAR); // include romm for the NULL
     return TRUE;
 }
 
