@@ -5,6 +5,7 @@
 
 #include <ddeml.h>
 #include <atlcoll.h>
+#include <string>
 
 //
 // String names for standard Windows Clipboard formats
@@ -96,7 +97,7 @@ public:
     virtual BOOL Request(UINT wFmt, void** ppData, DWORD* pdwSize);
     virtual BOOL Poke(UINT wFmt, void* pData, DWORD dwSize);
     virtual BOOL IsSupportedFormat(WORD wFormat);
-    virtual WORD* GetFormatList()
+    virtual const WORD* GetFormatList() const
         {return NULL;}
     virtual BOOL CanAdvise(UINT wFmt);
 
@@ -110,23 +111,63 @@ protected:
 // String item class
 //
 
-class CDDEStringItem : public CDDEItem
+template<typename T> struct CDDECharTraits;
+template<> struct CDDECharTraits<char>
+{
+    enum { CLIPBOARD_FORMAT = CF_TEXT };
+    static const WORD FormatList[];
+};
+template<> struct CDDECharTraits<wchar_t>
+{
+    enum { CLIPBOARD_FORMAT = CF_UNICODETEXT };
+    static const WORD FormatList[];
+};
+
+template<typename CharT, typename Traits=CDDECharTraits<CharT> >
+class CDDEStringItemT : public CDDEItem
 {
 public:
     virtual void OnPoke(){}
-    virtual void SetData(LPCTSTR pszData);
-    virtual LPCTSTR GetData()
-        {return m_strData;}
-    operator LPCTSTR()
-        {return m_strData;}
+    virtual void SetData(const CharT* pszData) {
+        ATLASSERT(pszData);
+        m_strData = pszData;
+        PostAdvise();
+    }
+    virtual const CharT* GetData() const
+        {return m_strData.c_str();}
+    operator const CharT*() const
+        {return m_strData.c_str();}
 
 protected:
-    virtual BOOL Request(UINT wFmt, void** ppData, DWORD* pdwSize);
-    virtual BOOL Poke(UINT wFmt, void* pData, DWORD dwSize);
-    virtual WORD* GetFormatList();
+    virtual BOOL Request(UINT wFmt, void** ppData, DWORD* pdwSize) {
+        ATLASSERT(wFmt == Traits::CLIPBOARD_FORMAT);
+        ATLASSERT(ppData);
+        *ppData = (void*)m_strData.c_str();
+        *pdwSize = (DWORD)((m_strData.size() + 1) * sizeof(CharT)); // allow for the null
+        return TRUE;
+    }
+    virtual BOOL Poke(UINT wFmt, void* pData, DWORD dwSize) {
+        ATLASSERT(wFmt == Traits::CLIPBOARD_FORMAT);
+        ATLASSERT(pData);
+        m_strData = (const CharT*)pData;
+        OnPoke();
+        return TRUE;
+    }
+    virtual const WORD* GetFormatList() const {
+        return Traits::FormatList;
+    }
 
-    CString m_strData;
+    std::basic_string<CharT> m_strData;
 };
+
+typedef CDDEStringItemT<char> CDDEStringItemA;
+typedef CDDEStringItemT<wchar_t> CDDEStringItemW;
+
+#ifdef _UNICODE
+#define CDDEStringItem CDDEStringItemW
+#else
+#define CDDEStringItem CDDEStringItemA
+#endif
 
 //
 // Item list class
@@ -208,7 +249,7 @@ typedef CAtlList<CDDEConv*> CDDEConvList;
 class CDDESystemItem : public CDDEItem
 {
 protected:
-    virtual WORD* GetFormatList();
+    virtual const WORD* GetFormatList() const;
 };
 
 class CDDESystemItem_TopicList : public CDDESystemItem

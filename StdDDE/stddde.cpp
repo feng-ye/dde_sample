@@ -166,7 +166,7 @@ BOOL CDDEItem::Poke(UINT wFmt, void* pData, DWORD dwSize)
 
 BOOL CDDEItem::IsSupportedFormat(WORD wFormat)
 {
-    WORD* pFmt = GetFormatList();
+    const WORD* pFmt = GetFormatList();
     if (!pFmt) return FALSE;
     while(*pFmt) {
         if (*pFmt == wFormat) return TRUE;
@@ -190,35 +190,8 @@ void CDDEItem::PostAdvise()
 //
 // CDDEStringItem
 
-WORD* CDDEStringItem::GetFormatList()
-{
-    return SysFormatList; // CF_TEXT
-}
-
-BOOL CDDEStringItem::Request(UINT wFmt, void** ppData, DWORD* pdwSize)
-{
-    ATLASSERT(wFmt == CF_TEXT || wFmt == CF_UNICODETEXT);
-    ATLASSERT(ppData);
-    *ppData = (void*)(LPCTSTR)m_strData;
-    *pdwSize = (m_strData.GetLength() + 1) * sizeof(TCHAR); // allow for the null
-    return TRUE;
-}
-
-BOOL CDDEStringItem::Poke(UINT wFmt, void* pData, DWORD dwSize)
-{
-    ATLASSERT(wFmt == CF_TEXT);
-    ATLASSERT(pData);
-    m_strData = (LPTSTR)pData;
-    OnPoke();
-    return TRUE;
-}
-
-void CDDEStringItem::SetData(LPCTSTR pszData)
-{
-    ATLASSERT(pszData);
-    m_strData = pszData;
-    PostAdvise();
-}
+const WORD CDDECharTraits<char>::FormatList[] = { CF_TEXT, 0 };
+const WORD CDDECharTraits<wchar_t>::FormatList[] = { CF_UNICODETEXT, 0 };
 
 ////////////////////////////////////////////////////////////////////////////////////
 //
@@ -547,7 +520,7 @@ BOOL CDDEConv::Poke(UINT wFmt, LPCTSTR pszItem, void* pData, DWORD dwSize)
 // Generic system topic items
 //
 
-WORD* CDDESystemItem::GetFormatList()
+const WORD* CDDESystemItem::GetFormatList() const
 {
     return SysFormatList;
 }
@@ -656,7 +629,7 @@ BOOL CDDESystemItem_FormatList::Request(UINT wFmt, void** ppData, DWORD* pdwSize
         // get the format list for this item
         //
 
-        WORD* pItemFmts = pItem->GetFormatList();
+        const WORD* pItemFmts = pItem->GetFormatList();
         if (pItemFmts) {
 
             //
