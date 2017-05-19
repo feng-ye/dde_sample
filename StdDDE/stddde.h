@@ -4,11 +4,11 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <tchar.h>
 #include <ddeml.h>
 
 #include <string>
-
-#include <atlcoll.h>
+#include <list>
 
 typedef std::basic_string<TCHAR> CDDEString;
 
@@ -181,7 +181,7 @@ typedef CDDEStringItemT<wchar_t> CDDEStringItemW;
 // Item list class
 //
 
-typedef CAtlList<CDDEItem*> CDDEItemList;
+typedef std::list<CDDEItem*> CDDEItemList;
 
 //
 // Topic class
@@ -217,7 +217,7 @@ protected:
 // Topic list class
 //
 
-typedef CAtlList<CDDETopic*> CDDETopicList;
+typedef std::list<CDDETopic*> CDDETopicList;
 
 //
 // Conversation class
@@ -248,7 +248,7 @@ public:
 // Conversation list class
 //
 
-typedef CAtlList<CDDEConv*> CDDEConvList;
+typedef std::list<CDDEConv*> CDDEConvList;
 
 
 //

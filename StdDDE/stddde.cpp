@@ -2,6 +2,19 @@
 
 #include "stddde.h"
 
+#include <algorithm>
+
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
+#ifdef _DEBUG
+#define DDE_DEBUG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
+#define new DDE_DEBUG_NEW
+#else
+#define DBG_NEW new
+#endif
+
 //
 // Constants
 //
@@ -226,14 +239,16 @@ BOOL CDDETopic::AddItem(CDDEItem* pNewItem)
     // See if we already have this item
     //
 
-    POSITION pos = m_ItemList.Find(pNewItem);
-    if (pos) return TRUE; // already have it
+    CDDEItemList::iterator it = std::find(m_ItemList.begin(),
+                                          m_ItemList.end(),
+                                          pNewItem);
+    if (it != m_ItemList.end()) return TRUE; // already have it
 
     //
     // Add the new item
     //
 
-    m_ItemList.AddTail(pNewItem);
+    m_ItemList.push_back(pNewItem);
     pNewItem->m_pTopic = this;
 
     return TRUE;
@@ -272,9 +287,9 @@ BOOL CDDETopic::Exec(void* pData, DWORD dwSize)
 
 CDDEItem* CDDETopic::FindItem(LPCTSTR pszItem)
 {
-    POSITION pos = m_ItemList.GetHeadPosition();
-    while (pos) {
-        CDDEItem* pItem = m_ItemList.GetNext(pos);
+    CDDEItemList::iterator it = m_ItemList.begin();
+    for (; it != m_ItemList.end(); ++it) {
+        CDDEItem* pItem = *it;
         if (_tcsicmp(pItem->m_strName.c_str(), pszItem) == 0) return pItem;
     }
     return NULL;
@@ -282,9 +297,9 @@ CDDEItem* CDDETopic::FindItem(LPCTSTR pszItem)
 
 const CDDEItem* CDDETopic::FindItem(LPCTSTR pszItem) const
 {
-    POSITION pos = m_ItemList.GetHeadPosition();
-    while (pos) {
-        const CDDEItem* pItem = m_ItemList.GetNext(pos);
+    CDDEItemList::const_iterator it = m_ItemList.begin();
+    for (; it != m_ItemList.end(); ++it) {
+        const CDDEItem* pItem = *it;
         if (_tcsicmp(pItem->m_strName.c_str(), pszItem) == 0) return pItem;
     }
     return NULL;
@@ -352,14 +367,9 @@ BOOL CDDEConv::Terminate()
         // Terminate this conversation
         //
 
-        ::DdeDisconnect(m_hConv);
-
-        //
-        // Tell the server
-        //
-
-        _ASSERT(m_pServer);
-        m_pServer->RemoveConversation(m_hConv);
+        if (!::DdeDisconnect(m_hConv)) {
+            _ASSERT_EXPR(FALSE, _T("DdeDisconnect Failed."));
+        }
 
         m_hConv = NULL;
 
@@ -555,11 +565,11 @@ BOOL CDDESystemItem_TopicList::Request(UINT wFmt, void** ppData, DWORD* pdwSize)
     _ASSERT(m_pTopic);
     CDDEServer* pServer = m_pTopic->m_pServer;
     _ASSERT(pServer);
-    POSITION pos = pServer->m_TopicList.GetHeadPosition();
+    CDDETopicList::iterator it = pServer->m_TopicList.begin();
     int items = 0;
-    while (pos) {
+    for (; it != pServer->m_TopicList.end(); ++it) {
 
-        CDDETopic* pTopic = pServer->m_TopicList.GetNext(pos);
+        CDDETopic* pTopic = *it;
 
         //
         // put in a tab delimiter unless this is the first item
@@ -594,11 +604,11 @@ BOOL CDDESystemItem_ItemList::Request(UINT wFmt, void** ppData, DWORD* pdwSize)
     static CDDEString strItems;
     strItems.clear();
     _ASSERT(m_pTopic);
-    POSITION pos = m_pTopic->m_ItemList.GetHeadPosition();
+    CDDEItemList::iterator it = m_pTopic->m_ItemList.begin();
     int items = 0;
-    while (pos) {
+    for (; it != m_pTopic->m_ItemList.end(); ++it) {
 
-        CDDEItem* pItem = m_pTopic->m_ItemList.GetNext(pos);
+        CDDEItem* pItem = *it;
 
         //
         // put in a tab delimiter unless this is the first item
@@ -633,12 +643,12 @@ BOOL CDDESystemItem_FormatList::Request(UINT wFmt, void** ppData, DWORD* pdwSize
     static CDDEString strFormats;
     strFormats.clear();
     _ASSERT(m_pTopic);
-    POSITION pos = m_pTopic->m_ItemList.GetHeadPosition();
+    CDDEItemList::iterator it = m_pTopic->m_ItemList.begin();
     int iFormats = 0;
     WORD wFmtList[100];
-    while (pos) {
+    for (; it != m_pTopic->m_ItemList.end(); ++it) {
 
-        CDDEItem* pItem = m_pTopic->m_ItemList.GetNext(pos);
+        CDDEItem* pItem = *it;
 
         //
         // get the format list for this item
@@ -733,12 +743,16 @@ void CDDEServer::Shutdown()
         // Terminate all conversations
         //
 
-        POSITION pos = m_ConvList.GetHeadPosition();
-        while (pos) {
-            CDDEConv* pConv = m_ConvList.GetNext(pos);
+        CDDEConvList::iterator it = m_ConvList.begin();
+        for (; it != m_ConvList.end(); ++it) {
+            CDDEConv*& pConv = *it;
             _ASSERT(pConv);
+            _ASSERT(pConv->m_hConv);
             pConv->Terminate();
+            pConv->Release();
+            pConv = NULL;
         }
+        m_ConvList.clear();
 
         //
         // Unregister the service name
@@ -768,8 +782,7 @@ BOOL CDDEServer::Create(LPCTSTR pszServiceName,
     //
 
     if (pTheServer != NULL) {
-        ATLTRACE("Already got a server!\n");
-        _ASSERT(0);
+        _ASSERT_EXPR(FALSE, _T("Already got a server!"));
         return FALSE;
     } else {
         pTheServer = this;
@@ -993,7 +1006,7 @@ CDDEConv* CDDEServer::AddConversation(HCONV hConv, HSZ hszTopic)
     // Add it into the list
     //
 
-    m_ConvList.AddTail(pConv);
+    m_ConvList.push_back(pConv);
 
     return pConv;
 }
@@ -1007,7 +1020,7 @@ CDDEConv* CDDEServer::AddConversation(CDDEConv* pNewConv)
     // Add it into the list
     //
 
-    m_ConvList.AddTail(pNewConv);
+    m_ConvList.push_back(pNewConv);
 
     return pNewConv;
 }
@@ -1019,11 +1032,11 @@ BOOL CDDEServer::RemoveConversation(HCONV hConv)
     //
 
     CDDEConv* pConv = NULL;
-    POSITION pos = m_ConvList.GetHeadPosition();
-    while (pos) {
-        pConv = m_ConvList.GetNext(pos);
+    CDDEConvList::iterator it = m_ConvList.begin();
+    for (; it != m_ConvList.end(); ++it) {
+        pConv = *it;
         if (pConv->m_hConv == hConv) {
-            m_ConvList.RemoveAt(m_ConvList.Find(pConv));
+            it = m_ConvList.erase(it);
             pConv->Release();
             return TRUE;
         }
@@ -1050,7 +1063,7 @@ HDDEDATA CDDEServer::DoWildConnect(HSZ hszTopic)
         // Count all the topics we have
         //
 
-        iTopics = m_TopicList.GetCount();
+        iTopics = m_TopicList.size();
 
     } else {
 
@@ -1106,10 +1119,10 @@ HDDEDATA CDDEServer::DoWildConnect(HSZ hszTopic)
         // Copy all the topics we have (includes the system topic)
         //
 
-        POSITION pos = m_TopicList.GetHeadPosition();
-        while (pos) {
+        CDDETopicList::iterator it = m_TopicList.begin();
+        for (; it != m_TopicList.end(); ++it) {
 
-            CDDETopic* pTopic = m_TopicList.GetNext(pos);
+            CDDETopic* pTopic = *it;
             pHszPair->hszSvc = ::DdeCreateStringHandle(m_dwDDEInstance,
                                                        m_strServiceName.c_str(),
                                                        DDE_CODEPAGE);
@@ -1155,9 +1168,9 @@ HDDEDATA CDDEServer::DoWildConnect(HSZ hszTopic)
 
 CDDETopic* CDDEServer::FindTopic(LPCTSTR pszTopic)
 {
-    POSITION pos = m_TopicList.GetHeadPosition();
-    while (pos) {
-        CDDETopic* pTopic = m_TopicList.GetNext(pos);
+    CDDETopicList::iterator it = m_TopicList.begin();
+    for (; it != m_TopicList.end(); ++it) {
+        CDDETopic* pTopic = *it;
         if (_tcsicmp(pTopic->m_strName.c_str(), pszTopic) == 0) return pTopic;
     }
     return NULL;
@@ -1165,9 +1178,9 @@ CDDETopic* CDDEServer::FindTopic(LPCTSTR pszTopic)
 
 const CDDETopic* CDDEServer::FindTopic(LPCTSTR pszTopic) const
 {
-    POSITION pos = m_TopicList.GetHeadPosition();
-    while (pos) {
-        CDDETopic* pTopic = m_TopicList.GetNext(pos);
+    CDDETopicList::const_iterator it = m_TopicList.begin();
+    for (; it != m_TopicList.end(); ++it) {
+        const CDDETopic* pTopic = *it;
         if (_tcsicmp(pTopic->m_strName.c_str(), pszTopic) == 0) return pTopic;
     }
     return NULL;
@@ -1398,14 +1411,16 @@ BOOL CDDEServer::AddTopic(CDDETopic* pNewTopic)
     // See if we already have this topic
     //
 
-    POSITION pos = m_TopicList.Find(pNewTopic);
-    if (pos) return TRUE; // already have it
+    CDDETopicList::iterator it = std::find(m_TopicList.begin(),
+                                           m_TopicList.end(),
+                                           pNewTopic);
+    if (it != m_TopicList.end()) return TRUE; // already have it
 
     //
     // Add the new topic
     //
 
-    m_TopicList.AddTail(pNewTopic);
+    m_TopicList.push_back(pNewTopic);
     pNewTopic->m_pServer = this;
 
     pNewTopic->AddItem(&m_SystemItemItems);
@@ -1548,10 +1563,10 @@ CDDEString DDEGetFormatName(WORD wFmt)
 
 CDDEConv* CDDEServer::FindConversation(HCONV hConv)
 {
-    POSITION pos = m_ConvList.GetHeadPosition();
-    while (pos) {
+    CDDEConvList::iterator it = m_ConvList.begin();
+    for (; it != m_ConvList.end(); ++it) {
 
-        CDDEConv* pConv = m_ConvList.GetNext(pos);
+        CDDEConv* pConv = *it;
         _ASSERT(pConv);
         if (pConv->m_hConv == hConv) return pConv;
     }
