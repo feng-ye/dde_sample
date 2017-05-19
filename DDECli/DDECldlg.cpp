@@ -152,6 +152,16 @@ BOOL CDDECliDlg::OnInitDialog()
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
+void CDDECliDlg::OnOK()
+{
+    // do not quit on Enter key.
+}
+
+void CDDECliDlg::OnCancel()
+{
+    CDialog::OnCancel();
+}
+
 void CDDECliDlg::OnSysCommand(UINT nID, LPARAM lParam)
 {
 	if ((nID & 0xFFF0) == IDM_ABOUTBOX)
@@ -279,9 +289,9 @@ void CDDECliDlg::OnConnectBtn()
         void* pData = NULL;
         m_pConversation->Request(m_strItem, &pData, &dwSize);
         if (dwSize) {
-            m_strItemData = (char*)pData;
+            m_strItemData = (LPCTSTR)pData;
             UpdateData(FALSE);
-            delete pData;
+            free(pData);
 
             //
             // ask for notice if it changes
@@ -301,6 +311,7 @@ void CDDECliDlg::OnConnectBtn()
 void CDDECliDlg::OnDisconnectBtn()
 {
     if (m_pConversation) {
+        m_DDEClient.RemoveConversation(m_pConversation->m_hConv);
         m_pConversation->Terminate();
         m_pConversation->Release();
         m_pConversation = NULL;
@@ -386,6 +397,7 @@ void CDDECliDlg::OnDestroy()
     //
 
     if (m_pConversation) {
+        m_DDEClient.RemoveConversation(m_pConversation->m_hConv);
         m_pConversation->Terminate();
         m_pConversation->Release();
     }
@@ -424,10 +436,16 @@ void CDDECliDlg::OnPokeBtn()
 {
 	ASSERT(m_pConversation);
     UpdateData(TRUE);
-    if (!m_pConversation->Poke(CF_TEXT,
-                          m_strItem,
-                          (void*)(LPCTSTR)m_strItemData,
-                          m_strItemData.GetLength() + 1)) {
+#if _UNICODE
+    int cf = CF_UNICODETEXT;
+#else
+    int cf = CF_TEXT;
+#endif
+    DWORD dwSize = (m_strItemData.GetLength() + 1) * sizeof(TCHAR);
+    if (!m_pConversation->Poke(cf,
+                               m_strItem,
+                               (void*)(LPCTSTR)m_strItemData,
+                               dwSize)) {
         Status(_T("Poke failed"));
     }
 }

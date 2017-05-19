@@ -16,28 +16,13 @@
 #endif
 
 //
-// Constants
-//
-
-#define DDE_TIMEOUT     5000 // 5 seconds
-
-#ifdef _UNICODE
-#define DDE_CODEPAGE    CP_WINUNICODE
-#else
-#define DDE_CODEPAGE    CP_WINANSI
-#endif
-
-//
 // Format lists
 //
 
-static WORD SysFormatList[] = {
-#ifdef _UNICODE
-    CF_UNICODETEXT,
-#else
-    CF_TEXT,
-#endif
-    NULL};
+static const WORD SysFormatList[] = {
+    DDE_CF_TEXT,
+    NULL
+};
 
 //
 // Structure used to hold a clipboard id and its text name
@@ -439,9 +424,9 @@ BOOL CDDEConv::Request(LPCTSTR pszItem, void** ppData, DWORD* pdwSize)
                                             0,
                                             m_hConv,
                                             hszItem,
-                                            CF_TEXT,
+                                            DDE_CF_TEXT,
                                             XTYP_REQUEST,
-                                            DDE_TIMEOUT,
+                                            m_pServer->GetTimeout(),
                                             NULL);
 
     if (!hData) {
@@ -458,7 +443,7 @@ BOOL CDDEConv::Request(LPCTSTR pszItem, void** ppData, DWORD* pdwSize)
 
     BYTE* pData = ::DdeAccessData(hData, pdwSize);
     _ASSERT(*pdwSize);
-    *ppData = new char[*pdwSize];
+    *ppData = malloc(*pdwSize);
     _ASSERT(*ppData);
     memcpy(*ppData, pData, *pdwSize);
     ::DdeUnaccessData(hData);
@@ -476,9 +461,9 @@ BOOL CDDEConv::Advise(LPCTSTR pszItem)
                                             0,
                                             m_hConv,
                                             hszItem,
-                                            CF_TEXT,
+                                            DDE_CF_TEXT,
                                             XTYP_ADVSTART,
-                                            DDE_TIMEOUT,
+                                            m_pServer->GetTimeout(),
                                             NULL);
 
     if (!hData) {
@@ -498,9 +483,9 @@ BOOL CDDEConv::Exec(LPCTSTR pszCmd)
                                             (DWORD)((_tcslen(pszCmd) + 1) * sizeof(TCHAR)),
                                             m_hConv,
                                             0,
-                                            CF_TEXT,
+                                            DDE_CF_TEXT,
                                             XTYP_EXECUTE,
-                                            DDE_TIMEOUT,
+                                            m_pServer->GetTimeout(),
                                             NULL);
 
     if (!hData) {
@@ -523,7 +508,7 @@ BOOL CDDEConv::Poke(UINT wFmt, LPCTSTR pszItem, void* pData, DWORD dwSize)
                                             hszItem,
                                             wFmt,
                                             XTYP_POKE,
-                                            DDE_TIMEOUT,
+                                            m_pServer->GetTimeout(),
                                             NULL);
 
     if (!hData) {
@@ -556,6 +541,10 @@ const WORD* CDDESystemItem::GetFormatList() const
 
 BOOL CDDESystemItem_TopicList::Request(UINT wFmt, void** ppData, DWORD* pdwSize)
 {
+    if (!IsSupportedFormat(wFmt)) {
+        return FALSE;
+    }
+
     //
     // Return the list of topics for this service
     //
@@ -597,6 +586,10 @@ BOOL CDDESystemItem_TopicList::Request(UINT wFmt, void** ppData, DWORD* pdwSize)
 
 BOOL CDDESystemItem_ItemList::Request(UINT wFmt, void** ppData, DWORD* pdwSize)
 {
+    if (!IsSupportedFormat(wFmt)) {
+        return FALSE;
+    }
+
     //
     // Return the list of items in this topic
     //
@@ -636,6 +629,10 @@ BOOL CDDESystemItem_ItemList::Request(UINT wFmt, void** ppData, DWORD* pdwSize)
 
 BOOL CDDESystemItem_FormatList::Request(UINT wFmt, void** ppData, DWORD* pdwSize)
 {
+    if (!IsSupportedFormat(wFmt)) {
+        return FALSE;
+    }
+
     //
     // Return the list of formats in this topic
     //
@@ -728,6 +725,7 @@ CDDEServer::CDDEServer()
 {
     m_bInitialized = FALSE;
     m_dwDDEInstance = 0;
+    m_dwTimeout = DDE_TIMEOUT;
 }
 
 CDDEServer::~CDDEServer()
@@ -775,7 +773,8 @@ void CDDEServer::Shutdown()
 
 BOOL CDDEServer::Create(LPCTSTR pszServiceName,
                         DWORD dwFilterFlags/* = 0 */,
-                        DWORD* pdwDDEInst/* = NULL */)
+                        DWORD* pdwDDEInst/* = NULL */,
+                        DWORD dwTimeout/* = DDE_TIMEOUT */)
 {
     //
     // make sure we are alone in the world
@@ -818,6 +817,8 @@ BOOL CDDEServer::Create(LPCTSTR pszServiceName,
     if (pdwDDEInst) {
         *pdwDDEInst = m_dwDDEInstance;
     }
+
+    m_dwTimeout = dwTimeout;
 
     //
     // Copy the service name and create a DDE name handle for it

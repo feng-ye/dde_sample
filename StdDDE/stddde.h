@@ -13,6 +13,22 @@
 typedef std::basic_string<TCHAR> CDDEString;
 
 //
+// Constants
+//
+
+#ifndef DDE_TIMEOUT
+#define DDE_TIMEOUT     5000 // 5 seconds
+#endif
+
+#ifdef _UNICODE
+#define DDE_CODEPAGE    CP_WINUNICODE
+#define DDE_CF_TEXT     CF_UNICODETEXT
+#else
+#define DDE_CODEPAGE    CP_WINANSI
+#define DDE_CF_TEXT     CF_TEXT
+#endif
+
+//
 // String names for standard Windows Clipboard formats
 //
 
@@ -145,14 +161,14 @@ public:
 
 protected:
     virtual BOOL Request(UINT wFmt, void** ppData, DWORD* pdwSize) {
-        _ASSERT(IsSupportedFormat(wFmt));
+        if (!IsSupportedFormat(wFmt)) return FALSE;
         _ASSERT(ppData);
         *ppData = (void*)m_strData.c_str();
         *pdwSize = (DWORD)((m_strData.size() + 1) * sizeof(CharT)); // allow for the null
         return TRUE;
     }
     virtual BOOL Poke(UINT wFmt, void* pData, DWORD dwSize) {
-        _ASSERT(IsSupportedFormat(wFmt));
+        if (!IsSupportedFormat(wFmt)) return FALSE;
         _ASSERT(pData);
         m_strData = (const CharT*)pData;
         OnPoke();
@@ -300,7 +316,8 @@ public:
     virtual ~CDDEServer();
     BOOL Create(LPCTSTR pszServiceName,
                 DWORD dwFilterFlags = 0,
-                DWORD* pdwDDEInst = NULL);
+                DWORD* pdwDDEInst = NULL,
+                DWORD dwTimeout = DDE_TIMEOUT);
     void Shutdown();
     virtual BOOL OnCreate() {return TRUE;}
     virtual UINT GetLastError()
@@ -331,6 +348,7 @@ public:
     CDDEConv* AddConversation(CDDEConv* pNewConv);
     BOOL RemoveConversation(HCONV hConv);
     CDDEConv*  FindConversation(HCONV hConv);
+    DWORD GetTimeout() const { return m_dwTimeout; }
 
     DWORD         m_dwDDEInstance;      // DDE Instance handle
     CDDETopicList m_TopicList;          // topic list
@@ -340,6 +358,7 @@ protected:
     CDDEString   m_strServiceName;       // Service name
     CHSZ         m_hszServiceName;       // String handle for service name
     CDDEConvList m_ConvList;             // Conversation list
+    DWORD        m_dwTimeout;
 
     HDDEDATA DoWildConnect(HSZ hszTopic);
     BOOL DoCallback(WORD wType,
