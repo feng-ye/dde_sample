@@ -18,9 +18,6 @@ set(SRC
     resource.h
     stdafx.h
 
-    ../StdDDE/stddde.h
-    ../StdDDE/stddde.cpp
-
     DDEServ.rc
     res/DDEServ.ico
     res/DDEServ.rc2
@@ -32,3 +29,4 @@ set(CMAKE_MFC_FLAG 2)
 add_executable(DDEServ WIN32 ${SRC})
 target_include_directories(DDEServ PRIVATE .)
 target_compile_definitions(DDEServ PRIVATE _AFXDLL)
+target_link_libraries(DDEServ StdDDE)

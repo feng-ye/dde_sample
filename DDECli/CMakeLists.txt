@@ -13,9 +13,6 @@ set(SRC
     stdafx.cpp
     stdafx.h
 
-    ../StdDDE/stddde.h
-    ../StdDDE/stddde.cpp
-
     DDECli.rc
     res/DDECli.ico
     res/DDECli.rc2
@@ -26,3 +23,4 @@ set(CMAKE_MFC_FLAG 2)
 add_executable(DDECli WIN32 ${SRC})
 target_include_directories(DDECli PRIVATE .)
 target_compile_definitions(DDECli PRIVATE _AFXDLL)
+target_link_libraries(DDECli StdDDE)

@@ -10,5 +10,6 @@ if(USE_UNICODE)
     add_definitions(-D_UNICODE)
 endif()
 
+add_subdirectory(StdDDE)
 add_subdirectory(DDEServ)
 add_subdirectory(DDECli)
