@@ -1,11 +1,16 @@
 // stddde.h
 
-#ifndef _STDDDE_
-#define _STDDDE_
+#pragma once
 
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
 #include <ddeml.h>
-#include <atlcoll.h>
+
 #include <string>
+
+#include <atlcoll.h>
+
+typedef std::basic_string<TCHAR> CDDEString;
 
 //
 // String names for standard Windows Clipboard formats
@@ -42,7 +47,7 @@
 // Helpers
 //
 
-static CString GetFormatName(WORD wFmt);
+CDDEString DDEGetFormatName(WORD wFmt);
 
 //
 // Generic counted object class
@@ -73,7 +78,7 @@ public:
     CHSZ(CDDEServer* pServer, LPCTSTR szName);
     virtual ~CHSZ();
     void Create(CDDEServer* pServer, LPCTSTR szName);
-    operator HSZ() {return m_hsz;}
+    operator HSZ() const { return m_hsz; }
 
     HSZ m_hsz;
 
@@ -96,12 +101,12 @@ public:
     void PostAdvise();
     virtual BOOL Request(UINT wFmt, void** ppData, DWORD* pdwSize);
     virtual BOOL Poke(UINT wFmt, void* pData, DWORD dwSize);
-    virtual BOOL IsSupportedFormat(WORD wFormat);
+    virtual BOOL IsSupportedFormat(WORD wFormat) const;
     virtual const WORD* GetFormatList() const
         {return NULL;}
-    virtual BOOL CanAdvise(UINT wFmt);
+    virtual BOOL CanAdvise(UINT wFmt) const;
 
-    CString m_strName;          // name of this item
+    CDDEString m_strName;       // name of this item
     CDDETopic* m_pTopic;        // pointer to the topic it belongs to
 
 protected:
@@ -129,7 +134,7 @@ class CDDEStringItemT : public CDDEItem
 public:
     virtual void OnPoke(){}
     virtual void SetData(const CharT* pszData) {
-        ATLASSERT(pszData);
+        _ASSERT(pszData);
         m_strData = pszData;
         PostAdvise();
     }
@@ -140,21 +145,24 @@ public:
 
 protected:
     virtual BOOL Request(UINT wFmt, void** ppData, DWORD* pdwSize) {
-        ATLASSERT(wFmt == Traits::CLIPBOARD_FORMAT);
-        ATLASSERT(ppData);
+        _ASSERT(IsSupportedFormat(wFmt));
+        _ASSERT(ppData);
         *ppData = (void*)m_strData.c_str();
         *pdwSize = (DWORD)((m_strData.size() + 1) * sizeof(CharT)); // allow for the null
         return TRUE;
     }
     virtual BOOL Poke(UINT wFmt, void* pData, DWORD dwSize) {
-        ATLASSERT(wFmt == Traits::CLIPBOARD_FORMAT);
-        ATLASSERT(pData);
+        _ASSERT(IsSupportedFormat(wFmt));
+        _ASSERT(pData);
         m_strData = (const CharT*)pData;
         OnPoke();
         return TRUE;
     }
     virtual const WORD* GetFormatList() const {
         return Traits::FormatList;
+    }
+    virtual BOOL IsSupportedFormat(UINT wFmt) const {
+        return wFmt == Traits::CLIPBOARD_FORMAT;
     }
 
     std::basic_string<CharT> m_strData;
@@ -194,11 +202,12 @@ public:
                       void* pData, DWORD dwSize);
     virtual BOOL Exec(void* pData, DWORD dwSize);
     virtual CDDEItem* FindItem(LPCTSTR pszItem);
-    virtual BOOL CanAdvise(UINT wFmt, LPCTSTR pszItem);
+    virtual const CDDEItem* FindItem(LPCTSTR pszItem) const;
+    virtual BOOL CanAdvise(UINT wFmt, LPCTSTR pszItem) const;
     void PostAdvise(CDDEItem* pItem);
 
-    CString m_strName;          // name of this topic
-    CDDEServer* m_pServer;      // ptr to the server which owns this topic
+    CDDEString   m_strName;     // name of this topic
+    CDDEServer*  m_pServer;     // ptr to the server which owns this topic
     CDDEItemList m_ItemList;    // List of items for this topic
 
 protected:
@@ -315,32 +324,33 @@ public:
     virtual BOOL Exec(LPCTSTR pszTopic, void* pData, DWORD dwSize);
     virtual void Status(LPCTSTR pszFormat, ...) {}
     virtual BOOL AddTopic(CDDETopic* pTopic);
-    CString StringFromHsz(HSZ hsz);
-    virtual BOOL CanAdvise(UINT wFmt, LPCTSTR pszTopic, LPCTSTR pszItem);
+    CDDEString StringFromHsz(HSZ hsz);
+    virtual BOOL CanAdvise(UINT wFmt, LPCTSTR pszTopic, LPCTSTR pszItem) const;
     void PostAdvise(CDDETopic* pTopic, CDDEItem* pItem);
     CDDEConv*  AddConversation(HCONV hConv, HSZ hszTopic);
     CDDEConv* AddConversation(CDDEConv* pNewConv);
     BOOL RemoveConversation(HCONV hConv);
     CDDEConv*  FindConversation(HCONV hConv);
 
-    DWORD       m_dwDDEInstance;        // DDE Instance handle
+    DWORD         m_dwDDEInstance;      // DDE Instance handle
     CDDETopicList m_TopicList;          // topic list
 
 protected:
-    BOOL        m_bInitialized;         // TRUE after DDE init complete
-    CString     m_strServiceName;       // Service name
-    CHSZ        m_hszServiceName;       // String handle for service name
-    CDDEConvList m_ConvList;            // Conversation list
+    BOOL         m_bInitialized;         // TRUE after DDE init complete
+    CDDEString   m_strServiceName;       // Service name
+    CHSZ         m_hszServiceName;       // String handle for service name
+    CDDEConvList m_ConvList;             // Conversation list
 
     HDDEDATA DoWildConnect(HSZ hszTopic);
     BOOL DoCallback(WORD wType,
-                WORD wFmt,
-                HCONV hConv,
-                HSZ hsz1,
-                HSZ hsz2,
-                HDDEDATA hData,
-                HDDEDATA *phReturnData);
+                    WORD wFmt,
+                    HCONV hConv,
+                    HSZ hsz1,
+                    HSZ hsz2,
+                    HDDEDATA hData,
+                    HDDEDATA *phReturnData);
     CDDETopic* FindTopic(LPCTSTR pszTopic);
+    const CDDETopic* FindTopic(LPCTSTR pszTopic) const;
 
 private:
     static HDDEDATA CALLBACK StdDDECallback(WORD wType,
@@ -358,6 +368,3 @@ private:
     CDDESystemItem_ItemList m_SystemItemItems;
     CDDESystemItem_FormatList m_SystemItemFormats;
 };
-
-
-#endif // _STDDDE_

@@ -51,7 +51,7 @@ BOOL CMyServer::OnCreate()
 void CMyStringItem::OnPoke()
 {
     STATUS(_T("%s is now %s"),
-           (LPCTSTR)m_strName,
+           m_strName.c_str(),
            GetData());
 }
 
@@ -61,6 +61,6 @@ CMyTopic::CMyTopic()
 
 BOOL CMyTopic::Exec(void* pData, DWORD dwSize)
 {
-    STATUS(_T("Exec: %s"), (char*)pData);
+    STATUS(_T("Exec: %s"), (TCHAR*)pData);
     return TRUE;
 }
