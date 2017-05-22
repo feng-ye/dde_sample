@@ -346,7 +346,7 @@ public:
     void PostAdvise(CDDETopic* pTopic, CDDEItem* pItem);
     CDDEConv*  AddConversation(HCONV hConv, HSZ hszTopic);
     CDDEConv* AddConversation(CDDEConv* pNewConv);
-    BOOL RemoveConversation(HCONV hConv);
+    BOOL RemoveConversation(CDDEConv* pConv);
     CDDEConv*  FindConversation(HCONV hConv);
     DWORD GetTimeout() const { return m_dwTimeout; }
 
@@ -370,6 +370,8 @@ protected:
                     HDDEDATA *phReturnData);
     CDDETopic* FindTopic(LPCTSTR pszTopic);
     const CDDETopic* FindTopic(LPCTSTR pszTopic) const;
+
+    BOOL OnConvDisconnected(HCONV hConv);
 
 private:
     static HDDEDATA CALLBACK StdDDECallback(WORD wType,

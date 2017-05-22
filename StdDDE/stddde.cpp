@@ -12,7 +12,7 @@
 #define DDE_DEBUG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
 #define new DDE_DEBUG_NEW
 #else
-#define DBG_NEW new
+#define DDE_DEBUG_NEW new
 #endif
 
 //
@@ -745,7 +745,6 @@ void CDDEServer::Shutdown()
         for (; it != m_ConvList.end(); ++it) {
             CDDEConv*& pConv = *it;
             _ASSERT(pConv);
-            _ASSERT(pConv->m_hConv);
             pConv->Terminate();
             pConv->Release();
             pConv = NULL;
@@ -926,7 +925,7 @@ HDDEDATA CALLBACK CDDEServer::StdDDECallback(WORD wType,
         //
 
         pServ->Status(_T("Disconnect"));
-        pServ->RemoveConversation(hConv);
+        pServ->OnConvDisconnected(hConv);
         break;
 
     case XTYP_WILDCONNECT:
@@ -1026,8 +1025,12 @@ CDDEConv* CDDEServer::AddConversation(CDDEConv* pNewConv)
     return pNewConv;
 }
 
-BOOL CDDEServer::RemoveConversation(HCONV hConv)
+BOOL CDDEServer::OnConvDisconnected(HCONV hConv)
 {
+    if (!hConv) {
+        return FALSE;
+    }
+
     //
     // Try to find the conversation in the list
     //
@@ -1038,6 +1041,7 @@ BOOL CDDEServer::RemoveConversation(HCONV hConv)
         pConv = *it;
         if (pConv->m_hConv == hConv) {
             it = m_ConvList.erase(it);
+            pConv->Terminate();
             pConv->Release();
             return TRUE;
         }
@@ -1046,6 +1050,24 @@ BOOL CDDEServer::RemoveConversation(HCONV hConv)
     //
     // Not in the list
     //
+
+    return FALSE;
+}
+
+BOOL CDDEServer::RemoveConversation(CDDEConv* pConv)
+{
+    if (!pConv) {
+        return FALSE;
+    }
+
+    CDDEConvList::iterator it = m_ConvList.begin();
+    for (; it != m_ConvList.end(); ++it) {
+        if (pConv == *it) {
+            it = m_ConvList.erase(it);
+            pConv->Release();
+            return TRUE;
+        }
+    }
 
     return FALSE;
 }

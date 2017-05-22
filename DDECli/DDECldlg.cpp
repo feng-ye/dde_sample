@@ -311,7 +311,7 @@ void CDDECliDlg::OnConnectBtn()
 void CDDECliDlg::OnDisconnectBtn()
 {
     if (m_pConversation) {
-        m_DDEClient.RemoveConversation(m_pConversation->m_hConv);
+        m_DDEClient.RemoveConversation(m_pConversation);
         m_pConversation->Terminate();
         m_pConversation->Release();
         m_pConversation = NULL;
@@ -397,7 +397,7 @@ void CDDECliDlg::OnDestroy()
     //
 
     if (m_pConversation) {
-        m_DDEClient.RemoveConversation(m_pConversation->m_hConv);
+        m_DDEClient.RemoveConversation(m_pConversation);
         m_pConversation->Terminate();
         m_pConversation->Release();
     }
