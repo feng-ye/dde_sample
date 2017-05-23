@@ -115,7 +115,7 @@ public:
     virtual ~CDDEItem();
     void Create(LPCTSTR pszName);
     void PostAdvise();
-    virtual BOOL Request(UINT wFmt, void** ppData, DWORD* pdwSize);
+    virtual BOOL Request(UINT wFmt, HSZ hszItem, HDDEDATA* phReturnData);
     virtual BOOL Poke(UINT wFmt, void* pData, DWORD dwSize);
     virtual BOOL IsSupportedFormat(WORD wFormat) const;
     virtual const WORD* GetFormatList() const
@@ -126,72 +126,37 @@ public:
     CDDETopic* m_pTopic;        // pointer to the topic it belongs to
 
 protected:
+    HDDEDATA CreateDdeData(UINT wFmt, HSZ hszItem, void* pData, DWORD dwSize) const;
+    HDDEDATA CreateDdeData(UINT wFmt, HSZ hszItem, const CDDEString& s) const;
+    HDDEDATA CreateDdeDataA(HSZ hszItem, const CDDEString& s) const;
+    HDDEDATA CreateDdeDataW(HSZ hszItem, const CDDEString& s) const;
 };
 
 //
 // String item class
 //
 
-template<typename T> struct CDDECharTraits;
-template<> struct CDDECharTraits<char>
-{
-    enum { CLIPBOARD_FORMAT = CF_TEXT };
-    static const WORD FormatList[];
-};
-template<> struct CDDECharTraits<wchar_t>
-{
-    enum { CLIPBOARD_FORMAT = CF_UNICODETEXT };
-    static const WORD FormatList[];
-};
-
-template<typename CharT, typename Traits=CDDECharTraits<CharT> >
-class CDDEStringItemT : public CDDEItem
+class CDDEStringItem : public CDDEItem
 {
 public:
     virtual void OnPoke(){}
-    virtual void SetData(const CharT* pszData) {
+    virtual void SetData(const TCHAR* pszData) {
         _ASSERT(pszData);
         m_strData = pszData;
         PostAdvise();
     }
-    virtual const CharT* GetData() const
+    virtual const TCHAR* GetData() const
         {return m_strData.c_str();}
-    operator const CharT*() const
+    operator const TCHAR*() const
         {return m_strData.c_str();}
 
 protected:
-    virtual BOOL Request(UINT wFmt, void** ppData, DWORD* pdwSize) {
-        if (!IsSupportedFormat(wFmt)) return FALSE;
-        _ASSERT(ppData);
-        *ppData = (void*)m_strData.c_str();
-        *pdwSize = (DWORD)((m_strData.size() + 1) * sizeof(CharT)); // allow for the null
-        return TRUE;
-    }
-    virtual BOOL Poke(UINT wFmt, void* pData, DWORD dwSize) {
-        if (!IsSupportedFormat(wFmt)) return FALSE;
-        _ASSERT(pData);
-        m_strData = (const CharT*)pData;
-        OnPoke();
-        return TRUE;
-    }
-    virtual const WORD* GetFormatList() const {
-        return Traits::FormatList;
-    }
-    virtual BOOL IsSupportedFormat(UINT wFmt) const {
-        return wFmt == Traits::CLIPBOARD_FORMAT;
-    }
+    virtual BOOL Request(UINT wFmt, HSZ hszItem, HDDEDATA* phReturnData);
+    virtual BOOL Poke(UINT wFmt, void* pData, DWORD dwSize);
+    virtual const WORD* GetFormatList() const;
 
-    std::basic_string<CharT> m_strData;
+    CDDEString m_strData;
 };
-
-typedef CDDEStringItemT<char> CDDEStringItemA;
-typedef CDDEStringItemT<wchar_t> CDDEStringItemW;
-
-#ifdef _UNICODE
-#define CDDEStringItem CDDEStringItemW
-#else
-#define CDDEStringItem CDDEStringItemA
-#endif
 
 //
 // Item list class
@@ -212,8 +177,7 @@ public:
     virtual ~CDDETopic();
     void Create(LPCTSTR pszName);
     BOOL AddItem(CDDEItem* pItem);
-    virtual BOOL Request(UINT wFmt, LPCTSTR pszItem,
-                         void** ppData, DWORD* pdwSize);
+    virtual BOOL Request(UINT wFmt, HSZ hszItem, HDDEDATA* phReturnData);
     virtual BOOL Poke(UINT wFmt, LPCTSTR pszItem,
                       void* pData, DWORD dwSize);
     virtual BOOL Exec(void* pData, DWORD dwSize);
@@ -250,9 +214,9 @@ public:
     virtual BOOL Terminate();
     virtual BOOL AdviseData(UINT wFmt, LPCTSTR pszTopic, LPCTSTR pszItem,
                             void* pData, DWORD dwSize);
-    virtual BOOL Request(LPCTSTR pszItem, void** ppData, DWORD* pdwSize);
-    virtual BOOL Advise(LPCTSTR pszItem);
-    virtual BOOL Exec(LPCTSTR pszCmd);
+    virtual BOOL Request(UINT wFmt, LPCTSTR pszItem, void** ppData, DWORD* pdwSize);
+    virtual BOOL Advise(UINT wFmt, LPCTSTR pszItem);
+    virtual BOOL Exec(UINT wFmt, LPCTSTR pszCmd);
     virtual BOOL Poke(UINT wFmt, LPCTSTR pszItem, void* pData, DWORD dwSize);
 
     CDDEServer* m_pServer;
@@ -280,27 +244,25 @@ protected:
 class CDDESystemItem_TopicList : public CDDESystemItem
 {
 protected:
-    virtual BOOL Request(UINT wFmt, void** ppData, DWORD* pdwSize);
+    virtual BOOL Request(UINT wFmt, HSZ hszItem, HDDEDATA* phReturnData);
 };
 
 class CDDESystemItem_ItemList : public CDDESystemItem
 {
 protected:
-    virtual BOOL Request(UINT wFmt, void** ppData, DWORD* pdwSize);
+    virtual BOOL Request(UINT wFmt, HSZ hszItem, HDDEDATA* phReturnData);
 };
 
 class CDDESystemItem_FormatList : public CDDESystemItem
 {
 protected:
-    virtual BOOL Request(UINT wFmt, void** ppData, DWORD* pdwSize);
+    virtual BOOL Request(UINT wFmt, HSZ hszItem, HDDEDATA* phReturnData);
 };
 
 class CDDEServerSystemTopic : public CDDETopic
 {
 protected:
-    virtual BOOL Request(UINT wFmt, LPCTSTR pszItem,
-                         void** ppData, DWORD* pdwSize);
-
+    virtual BOOL Request(UINT wFmt, HSZ hszItem, HDDEDATA* phReturnData);
 };
 
 
@@ -332,8 +294,8 @@ public:
                                     DWORD dwData2)
         {return NULL;}
 
-    virtual BOOL Request(UINT wFmt, LPCTSTR pszTopic, LPCTSTR pszItem,
-                         void** ppData, DWORD* pdwSize);
+    virtual BOOL Request(UINT wFmt, LPCTSTR pszTopic, HSZ hszItem,
+                         HDDEDATA* phReturnData);
     virtual BOOL Poke(UINT wFmt, LPCTSTR pszTopic, LPCTSTR pszItem,
                       void* pData, DWORD dwSize);
     virtual BOOL AdviseData(UINT wFmt, HCONV hConv, LPCTSTR pszTopic, LPCTSTR pszItem,

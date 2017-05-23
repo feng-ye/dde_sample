@@ -287,7 +287,7 @@ void CDDECliDlg::OnConnectBtn()
 
         DWORD dwSize = 0;
         void* pData = NULL;
-        m_pConversation->Request(m_strItem, &pData, &dwSize);
+        m_pConversation->Request(DDE_CF_TEXT, m_strItem, &pData, &dwSize);
         if (dwSize) {
             m_strItemData = (LPCTSTR)pData;
             UpdateData(FALSE);
@@ -297,7 +297,7 @@ void CDDECliDlg::OnConnectBtn()
             // ask for notice if it changes
             //
 
-            m_pConversation->Advise(m_strItem);
+            m_pConversation->Advise(DDE_CF_TEXT, m_strItem);
 
         } else {
 
@@ -427,7 +427,7 @@ void CDDECliDlg::OnExecBtn()
 {
 	ASSERT(m_pConversation);
     UpdateData(TRUE);
-    if (!m_pConversation->Exec(m_strExecCmd)) {
+    if (!m_pConversation->Exec(DDE_CF_TEXT, m_strExecCmd)) {
         Status(_T("Exec failed"));
     }
 }
