@@ -247,9 +247,25 @@ BOOL CDDEStringItem::Request(UINT wFmt, HSZ hszItem, HDDEDATA* phReturnData)
 BOOL CDDEStringItem::Poke(UINT wFmt, void* pData, DWORD dwSize)
 {
     if (!IsSupportedFormat(wFmt)) return FALSE;
-    if (wFmt != DDE_CF_TEXT) return FALSE; //TODO: convert to ANSI/UNICODE
     _ASSERT(pData);
-    m_strData = (const TCHAR*)pData;
+    if (wFmt == DDE_CF_TEXT) {
+        m_strData = (const TCHAR*)pData;
+    }
+    else {
+#ifdef _UNICODE
+        // convert ANSI to UNICODE
+        int cch = MultiByteToWideChar(CP_ACP, 0, (LPCCH)pData, dwSize, NULL, 0);
+        m_strData.resize(cch);
+        MultiByteToWideChar(CP_ACP, 0, (LPCCH)pData, dwSize, &m_strData[0], cch);
+#else
+        // convert UNICODE to ANSI
+        int bytes = WideCharToMultiByte(CP_ACP, 0, (LPCWCH)pData, dwSize,
+                                        NULL, 0, NULL, NULL);
+        m_strData.resize(bytes);
+        WideCharToMultiByte(CP_ACP, 0, (LPCWCH)pData, dwSize,
+                            &m_strData[0], bytes, NULL, NULL);
+#endif
+    }
     OnPoke();
     return TRUE;
 }
