@@ -148,7 +148,7 @@ public:
     virtual const TCHAR* GetData() const
         {return m_strData.c_str();}
     operator const TCHAR*() const
-        {return m_strData.c_str();}
+        {return GetData();}
 
 protected:
     virtual BOOL Request(UINT wFmt, HSZ hszItem, HDDEDATA* phReturnData);
@@ -183,7 +183,7 @@ public:
     virtual BOOL Exec(void* pData, DWORD dwSize);
     virtual CDDEItem* FindItem(LPCTSTR pszItem);
     virtual const CDDEItem* FindItem(LPCTSTR pszItem) const;
-    virtual BOOL CanAdvise(UINT wFmt, LPCTSTR pszItem) const;
+    virtual BOOL CanAdvise(UINT wFmt, LPCTSTR pszItem);
     void PostAdvise(CDDEItem* pItem);
 
     CDDEString   m_strName;     // name of this topic
@@ -304,7 +304,7 @@ public:
     virtual void Status(LPCTSTR pszFormat, ...) {}
     virtual BOOL AddTopic(CDDETopic* pTopic);
     CDDEString StringFromHsz(HSZ hsz);
-    virtual BOOL CanAdvise(UINT wFmt, LPCTSTR pszTopic, LPCTSTR pszItem) const;
+    virtual BOOL CanAdvise(UINT wFmt, LPCTSTR pszTopic, LPCTSTR pszItem);
     void PostAdvise(CDDETopic* pTopic, CDDEItem* pItem);
     CDDEConv*  AddConversation(HCONV hConv, HSZ hszTopic);
     CDDEConv* AddConversation(CDDEConv* pNewConv);

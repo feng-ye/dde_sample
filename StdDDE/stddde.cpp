@@ -1,8 +1,10 @@
 // stddde.cpp
+#include "stdafx.h"
 
 #include "stddde.h"
 
 #include <algorithm>
+#include <vector>
 
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
@@ -208,11 +210,11 @@ HDDEDATA CDDEItem::CreateDdeDataA(HSZ hszItem, const CDDEString& s) const
 #ifdef _UNICODE
     int bytes = WideCharToMultiByte(CP_ACP, 0, s.c_str(), (int)s.size(),
         NULL, 0, NULL, NULL);
-    char *buf = (char*)malloc(bytes + 1);
+    std::vector<char> buf(bytes + 1);
     buf[bytes] = 0;
     WideCharToMultiByte(CP_ACP, 0, s.c_str(), (int)s.size(),
-        buf, bytes, NULL, NULL);
-    return CreateDdeData(CF_TEXT, hszItem, buf, bytes + 1);
+        &buf[0], bytes, NULL, NULL);
+    return CreateDdeData(CF_TEXT, hszItem, &buf[0], bytes + 1);
 #else
     return CreateDdeData(CF_TEXT, hszItem, (void*)s.c_str(), (DWORD)(s.size() + 1));
 #endif
@@ -226,10 +228,10 @@ HDDEDATA CDDEItem::CreateDdeDataW(HSZ hszItem, const CDDEString& s) const
 #else
     int cch = MultiByteToWideChar(CP_ACP, 0, s.c_str(), (int)s.size(), NULL, 0);
     int bytes = (cch + 1) * sizeof(WCHAR);
-    WCHAR *buf = (WCHAR*)malloc(bytes);
+    std::vector<WCHAR> buf(cch + 1);
     buf[cch] = 0;
-    MultiByteToWideChar(CP_ACP, 0, s.c_str(), (int)s.size(), buf, cch);
-    return CreateDdeData(CF_UNICODETEXT, hszItem, buf, bytes);
+    MultiByteToWideChar(CP_ACP, 0, s.c_str(), (int)s.size(), &buf[0], cch);
+    return CreateDdeData(CF_UNICODETEXT, hszItem, &buf[0], bytes);
 #endif
 }
 
@@ -370,7 +372,7 @@ const CDDEItem* CDDETopic::FindItem(LPCTSTR pszItem) const
 }
 
 
-BOOL CDDETopic::CanAdvise(UINT wFmt, LPCTSTR pszItem) const
+BOOL CDDETopic::CanAdvise(UINT wFmt, LPCTSTR pszItem)
 {
     //
     // See if we have this item
@@ -946,6 +948,49 @@ BOOL CDDEServer::Create(LPCTSTR pszServiceName,
     return OnCreate();
 }
 
+void PrintStatus(CDDEServer* pServ, WORD wType)
+{
+    switch (wType) {
+    case XTYP_REGISTER:
+        pServ->Status(_T("Callback %4.4XH: XTYP_REGISTER"), wType);
+        break;
+    case XTYP_CONNECT_CONFIRM:
+        pServ->Status(_T("Callback %4.4XH: XTYP_CONNECT_CONFIRM"), wType);
+        break;
+    case XTYP_DISCONNECT:
+        pServ->Status(_T("Callback %4.4XH: XTYP_DISCONNECT"), wType);
+        break;
+    case XTYP_WILDCONNECT:
+        pServ->Status(_T("Callback %4.4XH: XTYP_WILDCONNECT"), wType);
+        break;
+    case XTYP_ADVSTART:
+        pServ->Status(_T("Callback %4.4XH: XTYP_ADVSTART"), wType);
+        break;
+    case XTYP_CONNECT:
+        pServ->Status(_T("Callback %4.4XH: XTYP_CONNECT"), wType);
+        break;
+    case XTYP_EXECUTE:
+        pServ->Status(_T("Callback %4.4XH: XTYP_EXECUTE"), wType);
+        break;
+    case XTYP_REQUEST:
+        pServ->Status(_T("Callback %4.4XH: XTYP_REQUEST"), wType);
+        break;
+    case XTYP_ADVREQ:
+        pServ->Status(_T("Callback %4.4XH: XTYP_ADVREQ"), wType);
+        break;
+    case XTYP_ADVDATA:
+        pServ->Status(_T("Callback %4.4XH: XTYP_ADVDATA"), wType);
+        break;
+    case XTYP_POKE:
+        pServ->Status(_T("Callback %4.4XH: XTYP_POKE"), wType);
+        break;
+    default:
+        pServ->Status(_T("Callback %4.4XH"), wType);
+        break;
+    }
+}
+
+
 //
 // Callback function
 // Note: this is a static
@@ -970,7 +1015,7 @@ HDDEDATA CALLBACK CDDEServer::StdDDECallback(WORD wType,
 
     CDDEServer* pServ = pTheServer; // BARF BARF BARF
     _ASSERT(pServ);
-    pServ->Status(_T("Callback %4.4XH"), wType);
+    PrintStatus(pServ, wType);
 
     switch (wType) {
     case XTYP_CONNECT_CONFIRM:
@@ -1590,13 +1635,13 @@ BOOL CDDEServer::Exec(LPCTSTR pszTopic, void* pData, DWORD dwSize)
     return pTopic->Exec(pData, dwSize);
 }
 
-BOOL CDDEServer::CanAdvise(UINT wFmt, LPCTSTR pszTopic, LPCTSTR pszItem) const
+BOOL CDDEServer::CanAdvise(UINT wFmt, LPCTSTR pszTopic, LPCTSTR pszItem)
 {
     //
     // See if we have a topic that matches
     //
 
-    const CDDETopic* pTopic = FindTopic(pszTopic);
+    CDDETopic* pTopic = FindTopic(pszTopic);
     if (!pTopic) return FALSE;
 
     return pTopic->CanAdvise(wFmt, pszItem);
@@ -1607,14 +1652,17 @@ void CDDEServer::PostAdvise(CDDETopic* pTopic, CDDEItem* pItem)
     _ASSERT(pTopic);
     _ASSERT(pItem);
 
-    ::DdePostAdvise(m_dwDDEInstance,
-                    ::DdeCreateStringHandle(m_dwDDEInstance,
-                                            pTopic->m_strName.c_str(),
-                                            DDE_CODEPAGE),
-                    ::DdeCreateStringHandle(m_dwDDEInstance,
-                                            pItem->m_strName.c_str(),
-                                            DDE_CODEPAGE));
+    BOOL result = ::DdePostAdvise(m_dwDDEInstance,
+                                  ::DdeCreateStringHandle(m_dwDDEInstance,
+                                                          pTopic->m_strName.c_str(),
+                                                          DDE_CODEPAGE),
+                                  ::DdeCreateStringHandle(m_dwDDEInstance,
+                                                          pItem->m_strName.c_str(),
+                                                          DDE_CODEPAGE));
 
+    if (!result) {
+        Status(_T("DdePostAdvise error: %d"), GetLastError());
+    }
 }
 
 CDDEString DDEGetFormatName(WORD wFmt)
